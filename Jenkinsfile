@@ -20,14 +20,14 @@ pipeline {
         stage('Update Kubernetes Manifest') {
             steps {
                 sh '''
-                git clone https://github.com/PyaePhyoHtun/Repo-kubernetesmanifest.git
+                git clone --branch main https://github.com/PyaePhyoHtun/Repo-kubernetesmanifest.git  // Ensure you're cloning the main branch
                 cd Repo-kubernetesmanifest
                 sed -i 's|pyaephyo28/capstone-app:.*|pyaephyo28/capstone-app:latest|g' deployment.yaml
                 git config --global user.email "pyaephyohtun201@gmail.com"
                 git config --global user.name "pyaephyotun"
                 git add deployment.yaml
                 git commit -m "Update image to latest"
-                git push origin main  // Ensure you're pushing to the correct branch (main)
+                git push origin main  // Push to the correct branch
                 '''
             }
         }
