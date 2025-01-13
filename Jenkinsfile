@@ -1,5 +1,5 @@
 pipeline {
-    agent Slave
+    agent { label 'Slave' }  // Use the label for your Ubuntu slave agent
     stages {
         stage('Build Docker Image') {
             steps {
