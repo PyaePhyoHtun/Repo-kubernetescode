@@ -4,7 +4,7 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    docker.build("pyaephyo28/capstone-app:latest")  // Use your actual Docker Hub username and repo
+                    docker.build("pyaephyo28/capstone-app:latest")
                 }
             }
         }
@@ -12,7 +12,7 @@ pipeline {
             steps {
                 script {
                     docker.withRegistry('https://registry.hub.docker.com', 'docker-hub-credentials') {
-                        docker.image("pyaephyo28/capstone-app:latest").push()  // Use your actual Docker Hub username and repo
+                        docker.image("pyaephyo28/capstone-app:latest").push()
                     }
                 }
             }
@@ -20,14 +20,14 @@ pipeline {
         stage('Update Kubernetes Manifest') {
             steps {
                 sh '''
-                git clone https://github.com/PyaePhyoHtun/Repo-kubernetesmanifest.git  // Replace with your repo URL
+                git clone https://github.com/PyaePhyoHtun/Repo-kubernetesmanifest.git
                 cd Repo-kubernetesmanifest
-                sed -i 's|pyaephyo28/capstone-app:.*|pyaephyo28/capstone-app:latest|g' deployment.yaml  // Update with your Docker image name
-                git config --global user.email "pyaephyohtun201@gmail.com"  // Replace with Jenkins email
-                git config --global user.name "pyaephyotun"  // Replace with Jenkins name
+                sed -i 's|pyaephyo28/capstone-app:.*|pyaephyo28/capstone-app:latest|g' deployment.yaml
+                git config --global user.email "pyaephyohtun201@gmail.com"
+                git config --global user.name "pyaephyotun"
                 git add deployment.yaml
                 git commit -m "Update image to latest"
-                git push origin main
+                git push origin main  // Ensure you're pushing to the correct branch (main)
                 '''
             }
         }
