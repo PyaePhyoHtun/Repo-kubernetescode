@@ -1,43 +1,39 @@
 pipeline {
-    agent { label 'Slave' }  // Use the label for your Ubuntu slave agent
+    agent {
+        label 'Slave'  // Ensure the job runs on an Ubuntu agent
+    }
+    environment {
+        DOCKER_HUB_CREDENTIALS = credentials('docker-hub-credentials')  // Jenkins credential ID for Docker Hub
+
     stages {
+        stage('Checkout Code') {
+            steps {
+                echo 'Checking out code...'
+                checkout scm  // Checkout the source code from the SCM (GitHub, GitLab, etc.)
+            }
+        }
+
+        stage('Docker Login') {
+            steps {
+                echo 'Logging in to Docker Hub...'
+                script {
+                    sh "echo ${DOCKER_HUB_CREDENTIALS_PSW} | docker login -u ${DOCKER_HUB_CREDENTIALS_USR} --password-stdin"
+                    // Logging in to Docker Hub using the Jenkins credentials
+                }
+            }
+        }
+
         stage('Build Docker Image') {
             steps {
-                script {
-                    // Build Docker image
-                    docker.build("pyaephyo28/capstone-app:latest")
-                }
+                echo 'Building Docker image...'
+                sh "docker build -t pyaephyo28/capstone-app:1.0 ."  // Build the Docker image
             }
         }
+
         stage('Push Docker Image') {
             steps {
-                script {
-                    // Push the Docker image to Docker Hub
-                    docker.withRegistry('https://registry.hub.docker.com', 'docker-hub-credentials') {
-                        docker.image("pyaephyo28/capstone-app:latest").push()
-                    }
-                }
-            }
-        }
-        stage('Update Kubernetes Manifest') {
-            steps {
-                sh '''
-                # Clone the Kubernetes repository with the main branch
-                git clone --branch main https://github.com/PyaePhyoHtun/Repo-kubernetesmanifest.git
-                cd Repo-kubernetesmanifest
-                
-                # Update Docker image tag in the deployment.yaml file
-                sed -i 's|pyaephyo28/capstone-app:.*|pyaephyo28/capstone-app:latest|g' deployment.yaml
-                
-                # Configure Git for committing changes
-                git config --global user.email "pyaephyohtun201@gmail.com"
-                git config --global user.name "pyaephyotun"
-                
-                # Add, commit, and push changes to GitHub
-                git add deployment.yaml
-                git commit -m "Update image to latest"
-                git push origin main
-                '''
+                echo 'Pushing Docker image to Docker Hub...'
+                sh "docker push pyaephyo28/capstone-app:1.0"  // Push the Docker image to Docker Hub
             }
         }
     }
