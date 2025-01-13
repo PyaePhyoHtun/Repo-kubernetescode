@@ -4,6 +4,7 @@ pipeline {
     }
     environment {
         DOCKER_HUB_CREDENTIALS = credentials('docker-hub-credentials')  // Jenkins credential ID for Docker Hub
+    }
 
     stages {
         stage('Checkout Code') {
