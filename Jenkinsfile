@@ -17,7 +17,7 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    docker.build("${DOCKER_IMAGE}:${DOCKER_TAG}")
+                    bat 'docker build -t pyaephyo28/capstone-app:latest .'
                 }
             }
         }
@@ -25,8 +25,9 @@ pipeline {
         stage('Push Docker Image') {
             steps {
                 script {
-                    docker.withRegistry('https://registry.hub.docker.com', 'docker-hub-credentials') {
-                        docker.image("${DOCKER_IMAGE}:${DOCKER_TAG}").push()
+                    withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASSWORD')]) {
+                        bat 'docker login -u %DOCKER_USER% -p %DOCKER_PASSWORD%'
+                        bat 'docker push pyaephyo28/capstone-app:latest'
                     }
                 }
             }
@@ -35,12 +36,12 @@ pipeline {
         stage('Update Kubernetes Manifest') {
             steps {
                 script {
-                    sh """
-                        git clone ${GIT_REPO_MANIFEST}
+                    bat """
+                        git clone %GIT_REPO_MANIFEST%
                         cd Repo-kubernetesmanifest
-                        sed -i 's|image: ${DOCKER_IMAGE}:.*|image: ${DOCKER_IMAGE}:${DOCKER_TAG}|g' deployment.yaml
+                        sed -i "s|image: %DOCKER_IMAGE%:.*|image: %DOCKER_IMAGE%:%DOCKER_TAG%|g" deployment.yaml
                         git add deployment.yaml
-                        git commit -m "Update image to ${DOCKER_TAG}"
+                        git commit -m "Update image to %DOCKER_TAG%"
                         git push origin main
                     """
                 }
@@ -50,9 +51,7 @@ pipeline {
         stage('Deploy to Kubernetes') {
             steps {
                 script {
-                    sh """
-                        kubectl apply -f Repo-kubernetesmanifest/deployment.yaml -n default
-                    """
+                    bat 'kubectl apply -f Repo-kubernetesmanifest/deployment.yaml -n default'
                 }
             }
         }
