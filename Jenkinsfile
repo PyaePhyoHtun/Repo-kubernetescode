@@ -36,27 +36,19 @@ pipeline {
         stage('Update Kubernetes Manifest') {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'github-token-credentials', usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD')]) {
-                    bat '''
+                    bat """
                     if exist Repo-kubernetesmanifest rmdir /s /q Repo-kubernetesmanifest
                     git clone https://%GIT_USERNAME%:%GIT_PASSWORD%@github.com/PyaePhyoHtun/Repo-kubernetesmanifest.git Repo-kubernetesmanifest
                     cd Repo-kubernetesmanifest
-
-                    echo "=== Original deployment.yaml ==="
-                    type deployment.yaml
-
-                    powershell -Command "(Get-Content deployment.yaml) -replace 'IMAGE_PLACEHOLDER', '${DOCKER_IMAGE}' | Set-Content deployment.yaml"
-                    powershell -Command "(Get-Content deployment.yaml) -replace 'TAG_PLACEHOLDER', '${DOCKER_TAG}' | Set-Content deployment.yaml"
-
-                    echo "=== Updated deployment.yaml ==="
-                    type deployment.yaml
-
+                    powershell -Command "(Get-Content deployment.yaml) -replace 'IMAGE_PLACEHOLDER', '${env.DOCKER_IMAGE}' | Set-Content deployment.yaml"
+                    powershell -Command "(Get-Content deployment.yaml) -replace 'TAG_PLACEHOLDER', '${env.DOCKER_TAG}' | Set-Content deployment.yaml"
                     git config --global user.email "pyaephyohtun201@gmail.com"
                     git config --global user.name "%GIT_USERNAME%"
                     git add deployment.yaml
-                    git commit -m "Update image to ${DOCKER_IMAGE}:${DOCKER_TAG}"
+                    git commit -m "Update image to ${env.DOCKER_IMAGE}:${env.DOCKER_TAG}"
                     git pull origin main
                     git push origin main
-                    '''
+                    """
                 }
             }
         }
