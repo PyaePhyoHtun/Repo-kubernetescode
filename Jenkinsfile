@@ -40,11 +40,12 @@ pipeline {
                     if exist Repo-kubernetesmanifest rmdir /s /q Repo-kubernetesmanifest
                     git clone https://%GIT_USERNAME%:%GIT_PASSWORD%@github.com/PyaePhyoHtun/Repo-kubernetesmanifest.git Repo-kubernetesmanifest
                     cd Repo-kubernetesmanifest
-                    powershell -Command "(Get-Content deployment.yaml) -replace 'image: .*', 'image: ${DOCKER_IMAGE}:${DOCKER_TAG}' | Set-Content deployment.yaml"
+                    powershell -Command "(Get-Content deployment.yaml) -replace 'IMAGE_PLACEHOLDER', '${DOCKER_IMAGE}' | Set-Content deployment.yaml"
+                    powershell -Command "(Get-Content deployment.yaml) -replace 'TAG_PLACEHOLDER', '${DOCKER_TAG}' | Set-Content deployment.yaml"
                     git config --global user.email "pyaephyohtun201@gmail.com"
                     git config --global user.name "%GIT_USERNAME%"
                     git add deployment.yaml
-                    git commit -m "Update image to latest"
+                    git commit -m "Update image to ${DOCKER_IMAGE}:${DOCKER_TAG}"
                     git pull origin main
                     git push origin main
                     '''
