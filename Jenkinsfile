@@ -21,10 +21,10 @@ pipeline {
 
         stage('Update Kubernetes Manifest') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'git-credentials', usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD')]) {
+                withCredentials([usernamePassword(credentialsId: 'github-token-credentials', usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD')]) {
                     bat '''
-                    powershell -Command "(Get-Content repo-manifest/deployment.yaml) -replace 'pyaephyo28/capstone-app:.*', 'pyaephyo28/capstone-app:latest' | Set-Content repo-manifest/deployment.yaml"
-                    cd repo-manifest
+                    powershell -Command "(Get-Content repo-manifest/deployment.yaml) -replace 'pyaephyo28/capstone-app:.*', 'pyaephyo28/capstone-app:latest' | Set-Content Repo-kubernetesmanifest/deployment.yaml"
+                    cd Repo-kubernetesmanifest
                     git config --global user.email "pyaephyohtun201@gmail.com"
                     git config --global user.name "%GIT_USERNAME%"
                     git add deployment.yaml
