@@ -24,6 +24,7 @@ pipeline {
                 withCredentials([usernamePassword(credentialsId: 'github-token-credentials', usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD')]) {
                     bat '''
                     echo "Cloning the Kubernetes manifest repository..."
+                    if exist Repo-kubernetesmanifest rmdir /s /q Repo-kubernetesmanifest
                     git clone https://%GIT_USERNAME%:%GIT_PASSWORD%@github.com/PyaePhyoHtun/Repo-kubernetesmanifest.git Repo-kubernetesmanifest
                     cd Repo-kubernetesmanifest
                     echo "Updating deployment.yaml..."
@@ -33,6 +34,8 @@ pipeline {
                     git config --global user.name "%GIT_USERNAME%"
                     git add deployment.yaml
                     git commit -m "Update image to latest"
+                    echo "Pulling latest changes from GitHub..."
+                    git pull https://%GIT_USERNAME%:%GIT_PASSWORD%@github.com/PyaePhyoHtun/Repo-kubernetesmanifest.git main
                     echo "Pushing changes to GitHub..."
                     git push https://%GIT_USERNAME%:%GIT_PASSWORD%@github.com/PyaePhyoHtun/Repo-kubernetesmanifest.git main
                     echo "Changes pushed to GitHub."
