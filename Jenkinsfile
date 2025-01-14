@@ -8,6 +8,7 @@ pipeline {
                 }
             }
         }
+
         stage('Push Docker Image') {
             steps {
                 script {
@@ -17,18 +18,21 @@ pipeline {
                 }
             }
         }
+
         stage('Update Kubernetes Manifest') {
-    steps {
-        bat '''
-        powershell -Command "(Get-Content repo-manifest/deployment.yaml) -replace 'pyaephyo28/capstone-app:.*', 'pyaephyo28/capstone-app:latest' | Set-Content repo-manifest/deployment.yaml"
-        cd repo-manifest
-        git config --global user.email "pyaephyohtun201@gmail.com"
-        git config --global user.name "Jenkins"
-        git add deployment.yaml
-        git commit -m "Update image to latest"
-        git push origin main
-        '''
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'git-credentials', usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD')]) {
+                    bat '''
+                    powershell -Command "(Get-Content repo-manifest/deployment.yaml) -replace 'pyaephyo28/capstone-app:.*', 'pyaephyo28/capstone-app:latest' | Set-Content repo-manifest/deployment.yaml"
+                    cd repo-manifest
+                    git config --global user.email "pyaephyohtun201@gmail.com"
+                    git config --global user.name "%GIT_USERNAME%"
+                    git add deployment.yaml
+                    git commit -m "Update image to latest"
+                    git push https://%GIT_USERNAME%:%GIT_PASSWORD%@github.com/PyaePhyoHtun/Repo-kubernetesmanifest.git main
+                    '''
+                }
+            }
         }
-    }
     }
 }
