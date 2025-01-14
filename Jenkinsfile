@@ -27,7 +27,7 @@ pipeline {
                     git clone https://%GIT_USERNAME%:%GIT_PASSWORD%@github.com/PyaePhyoHtun/Repo-kubernetesmanifest.git Repo-kubernetesmanifest
                     cd Repo-kubernetesmanifest
                     echo "Updating deployment.yaml..."
-                    powershell -Command "(Get-Content deployment.yaml) -replace 'pyaephyo28/capstone-app:.*', 'pyaephyo28/capstone-app:latest' | Set-Content deployment.yaml"
+                    powershell -Command "(Get-Content deployment.yaml) -replace 'image: .*', 'image: pyaephyo28/capstone-app:latest' | Set-Content deployment.yaml"
                     echo "Updated deployment.yaml."
                     git config --global user.email "pyaephyohtun201@gmail.com"
                     git config --global user.name "%GIT_USERNAME%"
