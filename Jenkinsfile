@@ -39,9 +39,10 @@ pipeline {
                     bat """
                         git clone %GIT_REPO_MANIFEST%
                         cd Repo-kubernetesmanifest
-                        sed -i "s|image: %DOCKER_IMAGE%:.*|image: %DOCKER_IMAGE%:%DOCKER_TAG%|g" deployment.yaml
+                        powershell -Command "(Get-Content deployment.yaml) -replace 'image: pyaephyo28/capstone-app:.*', 'image: pyaephyo28/capstone-app:latest' | Set-Content deployment.yaml"
                         git add deployment.yaml
-                        git commit -m "Update image to %DOCKER_TAG%"
+                        git commit -m "Update image to latest"
+                        git pull origin main --rebase
                         git push origin main
                     """
                 }
