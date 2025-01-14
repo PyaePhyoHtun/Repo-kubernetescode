@@ -23,13 +23,19 @@ pipeline {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'github-token-credentials', usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD')]) {
                     bat '''
-                    powershell -Command "(Get-Content repo-manifest/deployment.yaml) -replace 'pyaephyo28/capstone-app:.*', 'pyaephyo28/capstone-app:latest' | Set-Content Repo-kubernetesmanifest/deployment.yaml"
+                    echo "Cloning the Kubernetes manifest repository..."
+                    git clone https://%GIT_USERNAME%:%GIT_PASSWORD%@github.com/PyaePhyoHtun/Repo-kubernetesmanifest.git Repo-kubernetesmanifest
                     cd Repo-kubernetesmanifest
+                    echo "Updating deployment.yaml..."
+                    powershell -Command "(Get-Content deployment.yaml) -replace 'pyaephyo28/capstone-app:.*', 'pyaephyo28/capstone-app:latest' | Set-Content deployment.yaml"
+                    echo "Updated deployment.yaml."
                     git config --global user.email "pyaephyohtun201@gmail.com"
                     git config --global user.name "%GIT_USERNAME%"
                     git add deployment.yaml
                     git commit -m "Update image to latest"
+                    echo "Pushing changes to GitHub..."
                     git push https://%GIT_USERNAME%:%GIT_PASSWORD%@github.com/PyaePhyoHtun/Repo-kubernetesmanifest.git main
+                    echo "Changes pushed to GitHub."
                     '''
                 }
             }
