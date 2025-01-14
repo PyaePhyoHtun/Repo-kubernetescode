@@ -15,20 +15,7 @@ pipeline {
             }
         }
 
-        stage('Check for Changes in app.py') {
-            steps {
-                script {
-                    def changes = bat(script: 'git diff --name-only HEAD HEAD~1', returnStdout: true).trim()
-                    env.APP_CHANGED = changes.contains('app.py') ? 'true' : 'false'
-                    echo "Changes Detected: ${env.APP_CHANGED}"
-                }
-            }
-        }
-
         stage('Build Docker Image') {
-            when {
-                expression { env.APP_CHANGED == 'true' }
-            }
             steps {
                 script {
                     docker.build("${DOCKER_IMAGE}:${DOCKER_TAG}")
@@ -37,9 +24,6 @@ pipeline {
         }
 
         stage('Push Docker Image') {
-            when {
-                expression { env.APP_CHANGED == 'true' }
-            }
             steps {
                 script {
                     docker.withRegistry('https://registry.hub.docker.com', 'docker-hub-credentials') {
@@ -49,52 +33,20 @@ pipeline {
             }
         }
 
-        stage('Checkout Kubernetes Manifest') {
-            when {
-                expression { env.APP_CHANGED == 'true' }
-            }
-            steps {
-                script {
-                    bat '''
-                    set -e
-                    if exist Repo-kubernetesmanifest rmdir /s /q Repo-kubernetesmanifest
-                    git clone %GIT_REPO_MANIFEST% Repo-kubernetesmanifest
-                    '''
-                }
-            }
-        }
-
         stage('Update Kubernetes Manifest') {
-            when {
-                expression { env.APP_CHANGED == 'true' }
-            }
             steps {
                 withCredentials([usernamePassword(credentialsId: 'github-token-credentials', usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD')]) {
                     bat '''
-                    set -e
+                    if exist Repo-kubernetesmanifest rmdir /s /q Repo-kubernetesmanifest
+                    git clone https://%GIT_USERNAME%:%GIT_PASSWORD%@github.com/PyaePhyoHtun/Repo-kubernetesmanifest.git Repo-kubernetesmanifest
                     cd Repo-kubernetesmanifest
-                    powershell -Command "(Get-Content deployment.yaml) -replace 'image: .*', 'image: pyaephyo28/capstone-app:latest' | Set-Content deployment.yaml"
+                    powershell -Command "(Get-Content deployment.yaml) -replace 'image: .*', 'image: ${DOCKER_IMAGE}:${DOCKER_TAG}' | Set-Content deployment.yaml"
                     git config --global user.email "pyaephyohtun201@gmail.com"
                     git config --global user.name "%GIT_USERNAME%"
                     git add deployment.yaml
                     git commit -m "Update image to latest"
-                    git pull https://%GIT_USERNAME%:%GIT_PASSWORD%@github.com/PyaePhyoHtun/Repo-kubernetesmanifest.git main
-                    git push https://%GIT_USERNAME%:%GIT_PASSWORD%@github.com/PyaePhyoHtun/Repo-kubernetesmanifest.git main
-                    '''
-                }
-            }
-        }
-
-        stage('Deploy to Kubernetes') {
-            when {
-                expression { env.APP_CHANGED == 'true' }
-            }
-            steps {
-                script {
-                    bat '''
-                    set -e
-                    kubectl apply -f Repo-kubernetesmanifest/deployment.yaml -n default
-                    kubectl delete pods -l app=capstone-app -n default
+                    git pull origin main
+                    git push origin main
                     '''
                 }
             }
@@ -103,7 +55,7 @@ pipeline {
 
     post {
         success {
-            echo 'Pipeline succeeded!'
+            echo 'Pipeline executed successfully!'
         }
         failure {
             echo 'Pipeline failed!'
