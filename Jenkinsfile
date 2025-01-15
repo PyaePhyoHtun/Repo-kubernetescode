@@ -41,43 +41,53 @@ pipeline {
                     if exist Repo-kubernetesmanifest rmdir /s /q Repo-kubernetesmanifest
                     git clone https://%GIT_USERNAME%:%GIT_PASSWORD%@github.com/PyaePhyoHtun/Repo-kubernetesmanifest.git Repo-kubernetesmanifest
                     cd Repo-kubernetesmanifest
-        
+
                     echo "=== Deleting and recreating deployment.yaml ==="
                     if exist deployment.yaml del deployment.yaml
-                    echo apiVersion: apps/v1 > deployment.yaml
-                    echo kind: Deployment >> deployment.yaml
-                    echo metadata: >> deployment.yaml
-                    echo "  name: capstone-app" >> deployment.yaml
-                    echo spec: >> deployment.yaml
-                    echo "  replicas: 3" >> deployment.yaml
-                    echo "  selector:" >> deployment.yaml
-                    echo "    matchLabels:" >> deployment.yaml
-                    echo "      app: capstone-app" >> deployment.yaml
-                    echo "  template:" >> deployment.yaml
-                    echo "    metadata:" >> deployment.yaml
-                    echo "      labels:" >> deployment.yaml
-                    echo "        app: capstone-app" >> deployment.yaml
-                    echo "    spec:" >> deployment.yaml
-                    echo "      containers:" >> deployment.yaml
-                    echo "      - name: capstone-app" >> deployment.yaml
-                    echo "        image: ${env.DOCKER_IMAGE}:${env.DOCKER_TAG}" >> deployment.yaml
-                    echo "        imagePullPolicy: Always" >> deployment.yaml
-                    echo "        ports:" >> deployment.yaml
-                    echo "        - containerPort: 8080" >> deployment.yaml
-        
+                    (
+                        echo apiVersion: apps/v1
+                        echo kind: Deployment
+                        echo metadata:
+                        echo "  name: capstone-app"
+                        echo spec:
+                        echo "  replicas: 3"
+                        echo "  selector:"
+                        echo "    matchLabels:"
+                        echo "      app: capstone-app"
+                        echo "  template:"
+                        echo "    metadata:"
+                        echo "      labels:"
+                        echo "        app: capstone-app"
+                        echo "    spec:"
+                        echo "      containers:"
+                        echo "      - name: capstone-app"
+                        echo "        image: ${env.DOCKER_IMAGE}:${env.DOCKER_TAG}"
+                        echo "        imagePullPolicy: Always"
+                        echo "        ports:"
+                        echo "        - containerPort: 8080"
+                    ) > deployment.yaml
+
                     echo "=== Updated deployment.yaml ==="
                     type deployment.yaml
-        
+
                     echo "=== Configuring Git ==="
                     git config --global user.email "pyaephyohtun201@gmail.com"
                     git config --global user.name "%GIT_USERNAME%"
-        
+
                     echo "=== Forcefully adding and committing changes ==="
                     git add deployment.yaml
                     git commit --allow-empty -m "Update image to ${env.DOCKER_IMAGE}:${env.DOCKER_TAG}"
                     git pull origin main
                     git push origin main
                     """
+                }
+            }
+        }
+
+        stage('Restart Deployment') {
+            steps {
+                script {
+                    sh "kubectl rollout restart deployment capstone-app"
                 }
             }
         }
