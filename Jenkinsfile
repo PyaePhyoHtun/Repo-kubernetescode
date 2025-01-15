@@ -37,24 +37,42 @@ pipeline {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'github-token-credentials', usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD')]) {
                     bat """
+                    echo "=== Cloning Repo-kubernetesmanifest ==="
                     if exist Repo-kubernetesmanifest rmdir /s /q Repo-kubernetesmanifest
                     git clone https://%GIT_USERNAME%:%GIT_PASSWORD%@github.com/PyaePhyoHtun/Repo-kubernetesmanifest.git Repo-kubernetesmanifest
                     cd Repo-kubernetesmanifest
-
-                    echo "=== Original deployment.yaml ==="
-                    type deployment.yaml
-
-                    # Force update the image and tag in deployment.yaml
-                    powershell -Command "(Get-Content deployment.yaml) -replace 'image: .*', 'image: ${env.DOCKER_IMAGE}:${env.DOCKER_TAG}' | Set-Content deployment.yaml"
-
+        
+                    echo "=== Deleting and recreating deployment.yaml ==="
+                    if exist deployment.yaml del deployment.yaml
+                    echo apiVersion: apps/v1 > deployment.yaml
+                    echo kind: Deployment >> deployment.yaml
+                    echo metadata: >> deployment.yaml
+                    echo "  name: capstone-app" >> deployment.yaml
+                    echo spec: >> deployment.yaml
+                    echo "  replicas: 3" >> deployment.yaml
+                    echo "  selector:" >> deployment.yaml
+                    echo "    matchLabels:" >> deployment.yaml
+                    echo "      app: capstone-app" >> deployment.yaml
+                    echo "  template:" >> deployment.yaml
+                    echo "    metadata:" >> deployment.yaml
+                    echo "      labels:" >> deployment.yaml
+                    echo "        app: capstone-app" >> deployment.yaml
+                    echo "    spec:" >> deployment.yaml
+                    echo "      containers:" >> deployment.yaml
+                    echo "      - name: capstone-app" >> deployment.yaml
+                    echo "        image: ${env.DOCKER_IMAGE}:${env.DOCKER_TAG}" >> deployment.yaml
+                    echo "        imagePullPolicy: Always" >> deployment.yaml
+                    echo "        ports:" >> deployment.yaml
+                    echo "        - containerPort: 8080" >> deployment.yaml
+        
                     echo "=== Updated deployment.yaml ==="
                     type deployment.yaml
-
-                    # Configure Git
+        
+                    echo "=== Configuring Git ==="
                     git config --global user.email "pyaephyohtun201@gmail.com"
                     git config --global user.name "%GIT_USERNAME%"
-
-                    # Force add and commit
+        
+                    echo "=== Forcefully adding and committing changes ==="
                     git add deployment.yaml
                     git commit --allow-empty -m "Update image to ${env.DOCKER_IMAGE}:${env.DOCKER_TAG}"
                     git pull origin main
