@@ -40,8 +40,17 @@ pipeline {
                     if exist Repo-kubernetesmanifest rmdir /s /q Repo-kubernetesmanifest
                     git clone https://%GIT_USERNAME%:%GIT_PASSWORD%@github.com/PyaePhyoHtun/Repo-kubernetesmanifest.git Repo-kubernetesmanifest
                     cd Repo-kubernetesmanifest
-                    powershell -Command "(Get-Content deployment.yaml) -replace 'IMAGE_PLACEHOLDER', '${env.DOCKER_IMAGE}' | Set-Content deployment.yaml"
-                    powershell -Command "(Get-Content deployment.yaml) -replace 'TAG_PLACEHOLDER', '${env.DOCKER_TAG}' | Set-Content deployment.yaml"
+
+                    echo "=== Original deployment.yaml ==="
+                    type deployment.yaml
+
+                    # Replace placeholders or existing image and tag
+                    powershell -Command "(Get-Content deployment.yaml) -replace 'IMAGE_PLACEHOLDER:TAG_PLACEHOLDER', '${env.DOCKER_IMAGE}:${env.DOCKER_TAG}' | Set-Content deployment.yaml"
+                    powershell -Command "(Get-Content deployment.yaml) -replace '${env.DOCKER_IMAGE}:.*', '${env.DOCKER_IMAGE}:${env.DOCKER_TAG}' | Set-Content deployment.yaml"
+
+                    echo "=== Updated deployment.yaml ==="
+                    type deployment.yaml
+
                     git config --global user.email "pyaephyohtun201@gmail.com"
                     git config --global user.name "%GIT_USERNAME%"
                     git add deployment.yaml
