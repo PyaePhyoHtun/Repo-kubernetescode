@@ -44,17 +44,19 @@ pipeline {
                     echo "=== Original deployment.yaml ==="
                     type deployment.yaml
 
-                    # Replace placeholders or existing image and tag
-                    powershell -Command "(Get-Content deployment.yaml) -replace 'IMAGE_PLACEHOLDER:TAG_PLACEHOLDER', '${env.DOCKER_IMAGE}:${env.DOCKER_TAG}' | Set-Content deployment.yaml"
-                    powershell -Command "(Get-Content deployment.yaml) -replace '${env.DOCKER_IMAGE}:.*', '${env.DOCKER_IMAGE}:${env.DOCKER_TAG}' | Set-Content deployment.yaml"
+                    # Replace the image and tag in deployment.yaml
+                    powershell -Command "(Get-Content deployment.yaml) -replace 'image: .*', 'image: ${env.DOCKER_IMAGE}:${env.DOCKER_TAG}' | Set-Content deployment.yaml"
 
                     echo "=== Updated deployment.yaml ==="
                     type deployment.yaml
 
+                    # Configure Git
                     git config --global user.email "pyaephyohtun201@gmail.com"
                     git config --global user.name "%GIT_USERNAME%"
+
+                    # Force add and commit
                     git add deployment.yaml
-                    git commit -m "Update image to ${env.DOCKER_IMAGE}:${env.DOCKER_TAG}"
+                    git commit --allow-empty -m "Update image to ${env.DOCKER_IMAGE}:${env.DOCKER_TAG}"
                     git pull origin main
                     git push origin main
                     """
