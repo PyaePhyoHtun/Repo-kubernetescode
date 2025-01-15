@@ -36,7 +36,6 @@ pipeline {
             }
         }
 
-        // Stage 4: Update Kubernetes Manifest
         stage('Update Kubernetes Manifest') {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'github-token-credentials', usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD')]) {
@@ -45,14 +44,14 @@ pipeline {
                     if exist Repo-kubernetesmanifest rmdir /s /q Repo-kubernetesmanifest
                     git clone https://%GIT_USERNAME%:%GIT_PASSWORD%@github.com/PyaePhyoHtun/Repo-kubernetesmanifest.git Repo-kubernetesmanifest
                     cd Repo-kubernetesmanifest
-
+        
                     echo "=== Updating deployment.yaml ==="
                     powershell -Command "(Get-Content deployment.yaml) -replace 'image: .*', 'image: ${env.DOCKER_IMAGE}:${env.DOCKER_TAG}' | Set-Content deployment.yaml"
-
+        
                     echo "=== Configuring Git ==="
                     git config --global user.email "pyaephyohtun201@gmail.com"
                     git config --global user.name "PyaePhyoHtun"
-
+        
                     echo "=== Forcefully adding and committing changes ==="
                     git add deployment.yaml
                     git commit --allow-empty -m "Update image to ${env.DOCKER_IMAGE}:${env.DOCKER_TAG}"
