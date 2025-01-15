@@ -2,37 +2,41 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = "pyaephyo28/capstone-app"
-        DOCKER_TAG = "latest"
-        GIT_REPO_CODE = "https://github.com/PyaePhyoHtun/Repo-kubernetescode.git"
-        GIT_REPO_MANIFEST = "https://github.com/PyaePhyoHtun/Repo-kubernetesmanifest.git"
+        DOCKER_IMAGE = "pyaephyo28/capstone-app"  // Docker image name
+        DOCKER_TAG = "latest"                     // Docker image tag
+        GIT_REPO_CODE = "https://github.com/PyaePhyoHtun/Repo-kubernetescode.git"  // Application code repo
+        GIT_REPO_MANIFEST = "https://github.com/PyaePhyoHtun/Repo-kubernetesmanifest.git"  // Manifest repo
     }
 
     stages {
+        // Stage 1: Checkout Application Code
         stage('Checkout Application Code') {
             steps {
                 git branch: 'main', url: env.GIT_REPO_CODE
             }
         }
 
+        // Stage 2: Build Docker Image
         stage('Build Docker Image') {
             steps {
                 script {
-                    docker.build("${DOCKER_IMAGE}:${DOCKER_TAG}")
+                    docker.build("${env.DOCKER_IMAGE}:${env.DOCKER_TAG}")
                 }
             }
         }
 
+        // Stage 3: Push Docker Image to Docker Hub
         stage('Push Docker Image') {
             steps {
                 script {
                     docker.withRegistry('https://registry.hub.docker.com', 'docker-hub-credentials') {
-                        docker.image("${DOCKER_IMAGE}:${DOCKER_TAG}").push()
+                        docker.image("${env.DOCKER_IMAGE}:${env.DOCKER_TAG}").push()
                     }
                 }
             }
         }
 
+        // Stage 4: Update Kubernetes Manifest
         stage('Update Kubernetes Manifest') {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'github-token-credentials', usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD')]) {
@@ -42,37 +46,12 @@ pipeline {
                     git clone https://%GIT_USERNAME%:%GIT_PASSWORD%@github.com/PyaePhyoHtun/Repo-kubernetesmanifest.git Repo-kubernetesmanifest
                     cd Repo-kubernetesmanifest
 
-                    echo "=== Deleting and recreating deployment.yaml ==="
-                    if exist deployment.yaml del deployment.yaml
-                    (
-                        echo apiVersion: apps/v1
-                        echo kind: Deployment
-                        echo metadata:
-                        echo "  name: capstone-app"
-                        echo spec:
-                        echo "  replicas: 3"
-                        echo "  selector:"
-                        echo "    matchLabels:"
-                        echo "      app: capstone-app"
-                        echo "  template:"
-                        echo "    metadata:"
-                        echo "      labels:"
-                        echo "        app: capstone-app"
-                        echo "    spec:"
-                        echo "      containers:"
-                        echo "      - name: capstone-app"
-                        echo "        image: ${env.DOCKER_IMAGE}:${env.DOCKER_TAG}"
-                        echo "        imagePullPolicy: Always"
-                        echo "        ports:"
-                        echo "        - containerPort: 8080"
-                    ) > deployment.yaml
-
-                    echo "=== Updated deployment.yaml ==="
-                    type deployment.yaml
+                    echo "=== Updating deployment.yaml ==="
+                    powershell -Command "(Get-Content deployment.yaml) -replace 'image: .*', 'image: ${env.DOCKER_IMAGE}:${env.DOCKER_TAG}' | Set-Content deployment.yaml"
 
                     echo "=== Configuring Git ==="
                     git config --global user.email "pyaephyohtun201@gmail.com"
-                    git config --global user.name "%GIT_USERNAME%"
+                    git config --global user.name "PyaePhyoHtun"
 
                     echo "=== Forcefully adding and committing changes ==="
                     git add deployment.yaml
@@ -83,22 +62,14 @@ pipeline {
                 }
             }
         }
-
-        stage('Restart Deployment') {
-            steps {
-                script {
-                    bat "kubectl rollout restart deployment capstone-app"
-                }
-            }
-        }
     }
 
     post {
         success {
-            echo 'Pipeline executed successfully!'
+            echo 'Pipeline executed successfully! Argo CD will now sync the changes.'
         }
         failure {
-            echo 'Pipeline failed!'
+            echo 'Pipeline failed! Check logs for errors.'
         }
     }
 }
