@@ -44,7 +44,7 @@ pipeline {
                     echo "=== Original deployment.yaml ==="
                     type deployment.yaml
 
-                    # Replace the image and tag in deployment.yaml
+                    # Force update the image and tag in deployment.yaml
                     powershell -Command "(Get-Content deployment.yaml) -replace 'image: .*', 'image: ${env.DOCKER_IMAGE}:${env.DOCKER_TAG}' | Set-Content deployment.yaml"
 
                     echo "=== Updated deployment.yaml ==="
